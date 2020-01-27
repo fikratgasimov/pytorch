@@ -9,7 +9,7 @@
 ##+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 import math
-
+# Learning Rate defintion:
 class LR_Scheduler(object):
     """Learning Rate Scheduler
 
@@ -29,37 +29,61 @@ class LR_Scheduler(object):
     """
     def __init__(self, mode, base_lr, num_epochs, iters_per_epoch=0,
                  lr_step=0, warmup_epochs=0):
+        # set the mode of learning rate
         self.mode = mode
         print('Using {} LR Scheduler!'.format(self.mode))
+        # set learning rate as base_lr:
         self.lr = base_lr
+        # then, if statement mode is seen as 'step'
         if mode == 'step':
+            # analysize the statement
             assert lr_step
+        # if condition return True, create constructor, then set transformation which makes drct for lr_step
         self.lr_step = lr_step
+        # create constructor and set transformation, which maakes drct for iter_per_epoch
         self.iters_per_epoch = iters_per_epoch
+        #once iters_per_epoch defined, then find self.N
         self.N = num_epochs * iters_per_epoch
+        # declare self.epoch as (- 1) which compared below:
         self.epoch = -1
+        # finally, declare self.warmup_iters as the mult.(warmup_epochs,iters_per_epoch)
         self.warmup_iters = warmup_epochs * iters_per_epoch
-
+    # declare definite call with optimized,i, epoch, best_pred:
     def __call__(self, optimizer, i, epoch, best_pred):
+        # then, set T = as mult(epoch,self.iters_per_epoch) + i
         T = epoch * self.iters_per_epoch + i
+        
+        # finally, we can ensure about whether this mode is 'cos','poly','step'
         if self.mode == 'cos':
+            #if yes, then set lr as the following:
             lr = 0.5 * self.lr * (1 + math.cos(1.0 * T / self.N * math.pi))
+            
+        # elifs statements,if 'poly', then lr will be seen:
         elif self.mode == 'poly':
             lr = self.lr * pow((1 - 1.0 * T / self.N), 0.9)
+            
+        # elifs statements, if 'step', ultimate lr will be:
         elif self.mode == 'step':
             lr = self.lr * (0.1 ** (epoch // self.lr_step))
+            
+        # Nothing above represented:
         else:
             raise NotImplemented
-        # warm up lr schedule
+            
+        # warm up lr schedule: self.warmup_iters which is seen as multiplication:
         if self.warmup_iters > 0 and T < self.warmup_iters:
             lr = lr * 1.0 * T / self.warmup_iters
+        #self.epoch is negative (1)
         if epoch > self.epoch:
             print('\n=>Epoches %i, learning rate = %.4f, \
                 previous best = %.4f' % (epoch, lr, best_pred))
+            # finally, officially defined epoch
             self.epoch = epoch
+        # and check lr rate
         assert lr >= 0
+        # adjust learning rate in order to avoid overfitting
         self._adjust_learning_rate(optimizer, lr)
-
+    # then, declare class of _adjust_learning_rate:
     def _adjust_learning_rate(self, optimizer, lr):
         if len(optimizer.param_groups) == 1:
             optimizer.param_groups[0]['lr'] = lr
